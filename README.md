@@ -14,7 +14,7 @@ json: Used for parsing JSON data.
 cryptocompare: A library for working with cryptocurrency data.
 Replace 'KEY_HERE' with Your API Key:
 
-You need to replace the placeholder 'KEY_HERE' in the script with your actual API key for accessing cryptocurrency data.
+You need to replace the placeholder 'KEY_HERE' in the script with your actual API key for accessing cryptocurrency data. Which you can get from cryptocompare.com
 Define the CryptoPrice Class:
 
 Represents the main application window.
