@@ -1,4 +1,6 @@
 Cryptocurrency Price Tracker
+
+
 This Python script is a simple PyQt5 application that displays the current price of a selected cryptocurrency (Bitcoin, Ethereum, or Litecoin) in USD (U.S. Dollars) and updates the price every 5 seconds. It uses the CryptoCompare API to fetch cryptocurrency prices and PyQt5 for the graphical user interface.
 
 Code Overview
