@@ -1,63 +1,78 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QComboBox
-from PyQt5.QtCore import QTimer
-import requests
-import json
 import cryptocompare
+import requests
+import PySimpleGUI as sg
 
+API_KEY = 'YOUR_API_KEY'  # Replace with your actual API key
 
-# Replace 'KEY_HERE' with your actual API key
-API_KEY = 'cryptocompare.cryptocompare._set_api_key_parameter'
-
-# Set the API key parameter
+# Initialize the API key
 cryptocompare.cryptocompare._set_api_key_parameter(API_KEY)
 
-class CryptoPrice(QWidget):
+class CryptoPrice:
     def __init__(self):
-        super().__init__()
+        self.api_key = None
+        self.selected_cryptos = []
 
-        self.initUI()
+    def get_api_key(self):
+        layout = [
+            [sg.Text("Please enter your API key below:", size=(40, 1))],
+            [sg.InputText(key="api_key")],
+            [sg.Button("Next")]
+        ]
+        self.window = sg.Window("CryptoPrice", layout=layout, finalize=True)
 
-    def initUI(self):
-        self.layout = QVBoxLayout()
+        while True:
+            event, values = self.window.read()
+            if event in (sg.WIN_CLOSED, "Cancel"):
+                break
+            elif event == "Next":
+                self.api_key = values["api_key"]
+                self.window.close()
+                self.select_currencies()
 
-        self.crypto_label = QLabel(self)
-        self.price_label = QLabel(self)
+    def select_currencies(self):
+        crypto_choices = ["BTC", "ETH", "LTC", "XRP", "BCH", "Loom", "ORBS", "META", "BOND", "USDT", "XRP", "TRB", "USDC"]
+        layout = [
+            [sg.Text("Please select your preferred currencies from below:")],
+            [sg.Listbox(crypto_choices, size=(20, 10), select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE, key='cryptos')],
+            [sg.Button("Next")]
+        ]
+        self.window = sg.Window("CryptoPrice", layout=layout, finalize=True)
 
-        self.crypto_combo = QComboBox(self)
-        self.crypto_combo.addItem('BTC')
-        self.crypto_combo.addItem('ETH')
-        self.crypto_combo.addItem('LTC')
+        while True:
+            event, values = self.window.read()
+            if event in (sg.WIN_CLOSED, "Cancel"):
+                break
+            if event == 'Next':
+                self.selected_cryptos = values['cryptos']
+                self.window.close()
+                self.display_prices()
 
-        self.layout.addWidget(self.crypto_label)
-        self.layout.addWidget(self.price_label)
-        self.layout.addWidget(self.crypto_combo)
+    def display_prices(self):
+        layout = [
+            [sg.Text("Cryptocurrency Prices:")],
+            [sg.Multiline(size=(50, 10), key="price_display", disabled=True)],
+            [sg.Button("Cancel")]
+        ]
+        self.window = sg.Window("CryptoPrice", layout=layout, finalize=True)
+        self.get_prices()
 
-        self.setLayout(self.layout)
-
-        self.crypto_combo.activated.connect(self.get_price)
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.get_price)
-        self.timer.start(5000) # Refresh every 5 seconds
-
-        self.get_price()
-
-    def get_price(self):
-        crypto = self.crypto_combo.currentText()
-
-        try:
-            response = requests.get(f'https://min-api.cryptocompare.com/data/price?fsym={crypto}&tsyms=USD')
-            data = response.json()
-
-            self.crypto_label.setText(f'{crypto} Price:')
-            self.price_label.setText(f'${data["USD"]}')
-
-        except Exception as e:
-            print(f'Error: {e}')
+    def get_prices(self):
+        while True:
+            try:
+                prices = {}
+                for crypto in self.selected_cryptos:
+                    response = requests.get(f"https://min-api.cryptocompare.com/data/price?fsym={crypto}&tsyms=USD&api_key={self.api_key}")
+                    data = response.json()
+                    price = data.get("USD", "N/A")
+                    prices[crypto] = price
+                self.window['price_display'].update('\n'.join([f'{crypto}: ${price}' for crypto, price in prices.items()]))
+            except Exception as e:
+                sg.popup_error(f"Error: {e}")
+            event, values = self.window.read(timeout=5000)
+            if event in (sg.WIN_CLOSED, "Cancel"):
+                break
+        self.window.close()
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = CryptoPrice()
-    ex.show()
-    sys.exit(app.exec_())
+    app = CryptoPrice()
+    app.get_api_key()
